@@ -7,6 +7,8 @@ import {
     orderBy, deleteDoc, doc, getDoc
 } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
+import { motion } from 'framer-motion' // ← 追加
+
 
 export default function MovieDetail() {
     const router = useRouter()
@@ -136,26 +138,42 @@ export default function MovieDetail() {
             {/* 広告オーバーレイ */}
             {showAd && (
                 <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="relative">
-                        <div className="bg-white p-4 rounded-lg shadow-lg relative w-full max-w-[380px]">
-                            <button
-                                onClick={() => setShowAd(false)}
-                                className="absolute top-1 right-1 text-black bg-white bg-opacity-90 rounded-full text-[10px] px-[5px] py-[2px] z-10 hover:bg-opacity-100"
-                            >
-                                ×
-                            </button>
-                            <div className="text-center font-bold text-green-700 text-sm mb-2">
-                                🎯おすすめアプリ広告
-                            </div>
-                            <a href="https://elog.tokyo/" target="_blank" rel="noopener noreferrer" className="block">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="relative"
+                    >
+                        <a
+                            href="https://elog.tokyo/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block"
+                        >
+                            <div className="bg-white p-4 rounded-lg shadow-lg relative w-full max-w-[380px] hover:shadow-2xl transition">
+                                {/* × ボタン（リンクに反応させないように stopPropagation） */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setShowAd(false)
+                                    }}
+                                    className="absolute top-1 right-1 text-black bg-white bg-opacity-90 rounded-full text-[10px] px-[5px] py-[2px] z-10 hover:bg-opacity-100"
+                                >
+                                    ×
+                                </button>
+
+                                <div className="text-center font-bold text-green-700 text-sm mb-2">
+                                    🎯おすすめアプリ広告
+                                </div>
                                 <img
                                     src={`/ads/${adImage}`}
                                     alt="Ad"
                                     className="rounded border border-gray-300 hover:opacity-90 transition"
                                 />
-                            </a>
-                        </div>
-                    </div>
+                            </div>
+                        </a>
+                    </motion.div>
                 </div>
             )}
 
