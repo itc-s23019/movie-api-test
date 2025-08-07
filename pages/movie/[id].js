@@ -17,8 +17,9 @@ export default function MovieDetail() {
     const [rating, setRating] = useState(5)
     const [comments, setComments] = useState([])
     const [user, setUser] = useState(null)
-    const [isNowPlaying, setIsNowPlaying] = useState(false)  // 現在上映中かどうか
-
+    const [isNowPlaying, setIsNowPlaying] = useState(false)
+    const [showAd, setShowAd] = useState(false)
+    const [adImage, setAdImage] = useState('')
 
     const providerLinks = {
         "Netflix": "https://www.netflix.com/",
@@ -56,7 +57,6 @@ export default function MovieDetail() {
             const data = await res.json()
             setMovie(data)
 
-            // 現在上映中の映画IDに含まれているかチェック
             const checkNowPlaying = async () => {
                 const nowPlayingRes = await fetch(`https://api.themoviedb.org/3/movie/now_playing?language=ja-JP&region=JP`, {
                     headers: {
@@ -69,7 +69,6 @@ export default function MovieDetail() {
             }
             await checkNowPlaying()
 
-            // 配信サービスの取得
             const watchRes = await fetch(`https://api.themoviedb.org/3/movie/${id}/watch/providers`, {
                 headers: {
                     Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN}`
@@ -91,7 +90,11 @@ export default function MovieDetail() {
             rating,
             uid: user.uid,
             timestamp: new Date()
-        })
+        });
+
+        const randomImage = `ad${Math.floor(Math.random() * 4) + 1}.jpg`
+        setAdImage(randomImage)
+        setShowAd(true)
     }
 
     const fetchReviews = async () => {
@@ -129,119 +132,138 @@ export default function MovieDetail() {
     if (!movie) return <div className="text-white p-6">読み込み中...</div>
 
     return (
-        <div className="min-h-screen bg-black text-white p-6">
-            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
-                <div className="md:w-1/3 space-y-6">
-                    {/*<img*/}
-                    {/*    src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}*/}
-                    {/*    alt={movie.title}*/}
-                    {/*    className="rounded shadow-lg w-full"*/}
-                    {/*/>*/}
-                    <img
-                        src="/noimage.png"
-                        alt="No image"
-                        className="rounded shadow-lg w-full"
-                    />
-                    <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-700 p-4 rounded space-y-4">
-                        <h2 className="text-xl font-semibold">レビューを書く</h2>
-                        <textarea
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            placeholder="映画の感想を入力"
-                            className="w-full p-2 rounded bg-black border border-gray-600 text-white"
-                        />
-                        <div className="flex items-center gap-2">
-                            <span>評価:</span>
-                            {[1, 2, 3, 4, 5].map((num) => (
-                                <button
-                                    key={num}
-                                    type="button"
-                                    onClick={() => setRating(num)}
-                                    className="focus:outline-none"
-                                >
-                                <span
-                                    className={`text-2xl ${
-                                        num <= rating ? 'text-yellow-400' : 'text-gray-500'
-                                    }`}
-                                >
-                                    ★
-                                </span>
-                                </button>
-                            ))}
-                        </div>
-                        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-                            送信する
-                        </button>
-                    </form>
-                </div>
-
-                <div className="md:w-2/3 space-y-6">
-                    <div>
-                        <h1 className="text-3xl font-bold mb-2">{movie.title}</h1>
-                        <p className="text-gray-300">{movie.overview}</p>
-
-                        {isNowPlaying && (
-                            <a
-                                href={`https://eiga.com/now/q/?title=${encodeURIComponent(movie.title)}&region=&pref=&area=&genre=on&sort=release`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded mt-4"
+        <>
+            {/* 広告オーバーレイ */}
+            {showAd && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="relative">
+                        <div className="bg-white p-4 rounded-lg shadow-lg relative w-full max-w-[380px]">
+                            <button
+                                onClick={() => setShowAd(false)}
+                                className="absolute top-1 right-1 text-black bg-white bg-opacity-90 rounded-full text-[10px] px-[5px] py-[2px] z-10 hover:bg-opacity-100"
                             >
-                                🎬 「{movie.title}」を映画館で探す（映画.com）
+                                ×
+                            </button>
+                            <div className="text-center font-bold text-green-700 text-sm mb-2">
+                                🎯おすすめアプリ広告
+                            </div>
+                            <a href="https://elog.tokyo/" target="_blank" rel="noopener noreferrer" className="block">
+                                <img
+                                    src={`/ads/${adImage}`}
+                                    alt="Ad"
+                                    className="rounded border border-gray-300 hover:opacity-90 transition"
+                                />
                             </a>
-                        )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 本体 */}
+            <div className="min-h-screen bg-black text-white p-6">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
+                    <div className="md:w-1/3 space-y-6">
+                        <img
+                            src="/noimage.png"
+                            alt="No image"
+                            className="rounded shadow-lg w-full"
+                        />
+                        <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-700 p-4 rounded space-y-4">
+                            <h2 className="text-xl font-semibold">レビューを書く</h2>
+                            <textarea
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                placeholder="映画の感想を入力"
+                                className="w-full p-2 rounded bg-black border border-gray-600 text-white"
+                            />
+                            <div className="flex items-center gap-2">
+                                <span>評価:</span>
+                                {[1, 2, 3, 4, 5].map((num) => (
+                                    <button
+                                        key={num}
+                                        type="button"
+                                        onClick={() => setRating(num)}
+                                        className="focus:outline-none"
+                                    >
+                                        <span className={`text-2xl ${num <= rating ? 'text-yellow-400' : 'text-gray-500'}`}>
+                                            ★
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                            <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                                送信する
+                            </button>
+                        </form>
                     </div>
 
-
-                    {watchProviders.length > 0 && (
+                    <div className="md:w-2/3 space-y-6">
                         <div>
-                            <h2 className="text-2xl font-semibold mb-2">配信中のサブスク</h2>
-                            <div className="flex gap-4 flex-wrap">
-                                {watchProviders.map((provider) => (
-                                    <a
-                                        key={provider.provider_id}
-                                        href={providerLinks[provider.provider_name]}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 bg-gray-800 p-2 rounded hover:bg-gray-700"
-                                    >
-                                        <img
-                                            src={`https://image.tmdb.org/t/p/w45${provider.logo_path}`}
-                                            alt={provider.provider_name}
-                                            className="w-6 h-6"
-                                        />
-                                        <span>{provider.provider_name}</span>
-                                    </a>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                            <h1 className="text-3xl font-bold mb-2">{movie.title}</h1>
+                            <p className="text-gray-300">{movie.overview}</p>
 
-                    <div>
-                        <h2 className="text-2xl font-semibold mb-2">みんなのレビュー</h2>
-                        {comments.length === 0 ? (
-                            <p className="text-gray-500">まだレビューはありません。</p>
-                        ) : (
-                            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                                {comments.map((c) => (
-                                    <div key={c.id} className="bg-gray-800 p-4 rounded shadow relative">
-                                        <div className="text-yellow-400 text-lg mb-1">{'⭐'.repeat(c.rating)}</div>
-                                        <p className="text-white">{c.text}</p>
-                                        {(user?.uid === c.uid || user?.isAdmin) && (
-                                            <button
-                                                onClick={() => handleDelete(c.id)}
-                                                className="absolute top-2 right-2 text-sm text-red-400 hover:text-red-200"
-                                            >
-                                                削除
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
+                            {isNowPlaying && (
+                                <a
+                                    href={`https://eiga.com/now/q/?title=${encodeURIComponent(movie.title)}&region=&pref=&area=&genre=on&sort=release`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded mt-4"
+                                >
+                                    🎬 「{movie.title}」を映画館で探す（映画.com）
+                                </a>
+                            )}
+                        </div>
+
+                        {watchProviders.length > 0 && (
+                            <div>
+                                <h2 className="text-2xl font-semibold mb-2">配信中のサブスク</h2>
+                                <div className="flex gap-4 flex-wrap">
+                                    {watchProviders.map((provider) => (
+                                        <a
+                                            key={provider.provider_id}
+                                            href={providerLinks[provider.provider_name]}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 bg-gray-800 p-2 rounded hover:bg-gray-700"
+                                        >
+                                            <img
+                                                src={`https://image.tmdb.org/t/p/w45${provider.logo_path}`}
+                                                alt={provider.provider_name}
+                                                className="w-6 h-6"
+                                            />
+                                            <span>{provider.provider_name}</span>
+                                        </a>
+                                    ))}
+                                </div>
                             </div>
                         )}
+
+                        <div>
+                            <h2 className="text-2xl font-semibold mb-2">みんなのレビュー</h2>
+                            {comments.length === 0 ? (
+                                <p className="text-gray-500">まだレビューはありません。</p>
+                            ) : (
+                                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                                    {comments.map((c) => (
+                                        <div key={c.id} className="bg-gray-800 p-4 rounded shadow relative">
+                                            <div className="text-yellow-400 text-lg mb-1">{'⭐'.repeat(c.rating)}</div>
+                                            <p className="text-white">{c.text}</p>
+                                            {(user?.uid === c.uid || user?.isAdmin) && (
+                                                <button
+                                                    onClick={() => handleDelete(c.id)}
+                                                    className="absolute top-2 right-2 text-sm text-red-400 hover:text-red-200"
+                                                >
+                                                    削除
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     )
 }
